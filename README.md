@@ -1,4 +1,5 @@
-# gomultifmt
+
+# gomultifmt [![Travis](https://img.shields.io/travis/Eun/gomultifmt.svg)](https://travis-ci.org/Eun/gomultifmt) [![go-report](https://goreportcard.com/badge/github.com/Eun/gomultifmt)](https://goreportcard.com/report/github.com/Eun/gomultifmt)
 Run multiple golang formatters in one command
 
 
