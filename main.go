@@ -27,10 +27,10 @@ func formatPaths(paths []string, tools []tool) {
 	for i := 0; i < len(paths); i++ {
 		for j := 0; j < len(tools); j++ {
 			out := &bytes.Buffer{}
-			tools[j].args = append(tools[j].args, paths[i])
-			debug("Running tool `%s' with `%v'", tools[j].cmd, tools[j].args)
+			args := append(tools[j].args, paths[i])
+			debug("Running tool `%s' with `%v'", tools[j].cmd, args)
 
-			cmd := exec.Command(tools[j].cmd, tools[j].args...)
+			cmd := exec.Command(tools[j].cmd, args...)
 
 			cmd.Stdout = out
 			cmd.Stderr = os.Stderr
