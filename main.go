@@ -36,7 +36,7 @@ func formatPaths(paths []string, tools []tool) {
 			cmd.Stderr = os.Stderr
 
 			if err := cmd.Run(); err != nil {
-				warning("Tool `%s' failed: %v", err)
+				warning("Tool `%s' failed: %v", tools[j].cmd, err)
 				continue
 			}
 
