@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"os/exec"
@@ -61,6 +62,43 @@ func formatPaths(paths []string, tools []tool) {
 	}
 }
 
+func formatStdin(tools []tool) error {
+	in := &bytes.Buffer{}
+	_, err := io.Copy(in, os.Stdin)
+	if err != nil {
+		return err
+	}
+	for j := 0; j < len(tools); j++ {
+		out := &bytes.Buffer{}
+		debug("Running tool `%s' with `%v' (STDIN)", tools[j].cmd, tools[j].args)
+
+		cmd := exec.Command(tools[j].cmd, tools[j].args...)
+
+		cmd.Stdin = in
+		cmd.Stdout = out
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			warning("Tool `%s' failed: %v", tools[j].cmd, err)
+			continue
+		}
+
+		in.Reset()
+		_, err := io.Copy(in, out)
+		if err != nil {
+			return err
+		}
+	}
+
+	if writeToSourceFlag != nil && *writeToSourceFlag {
+		return errors.New("Could not write to source if reading from stdin")
+	}
+	if _, err := io.Copy(os.Stdout, in); err != nil {
+		return err
+	}
+	return nil
+}
+
 func main() {
 	pathsArg := kingpin.Arg("path", "Directories to format. Defaults to \".\". <path>/... will recurse.").Strings()
 	kingpin.CommandLine.HelpFlag.Short('h')
@@ -69,27 +107,6 @@ func main() {
 	kingpin.CommandLine.Help = "Run multiple golang formatters in one command"
 
 	kingpin.Parse()
-
-	if pathsArg == nil || len(*pathsArg) <= 0 {
-		return
-	}
-
-	if fmtFlag == nil || len(*fmtFlag) <= 0 {
-		return
-	}
-
-	if skipFlag == nil {
-		skipFlag = &[]string{}
-	}
-
-	if os.Getenv("GO15VENDOREXPERIMENT") == "1" || (vendorFlag != nil && *vendorFlag) {
-		if err := os.Setenv("GO15VENDOREXPERIMENT", "1"); err != nil {
-			warning("setenv GO15VENDOREXPERIMENT: %s", err)
-		}
-		*skipFlag = append(*skipFlag, "vendor")
-		trueValue := true
-		vendorFlag = &trueValue
-	}
 
 	var tools []tool
 
@@ -109,6 +126,30 @@ func main() {
 		if len(tool.cmd) > 0 {
 			tools = append(tools, tool)
 		}
+	}
+
+	if fmtFlag == nil || len(*fmtFlag) <= 0 {
+		return
+	}
+
+	if pathsArg == nil || len(*pathsArg) <= 0 {
+		if err := formatStdin(tools); err != nil {
+			warning("formating from stdin failed: %v\n", err)
+		}
+		return
+	}
+
+	if skipFlag == nil {
+		skipFlag = &[]string{}
+	}
+
+	if os.Getenv("GO15VENDOREXPERIMENT") == "1" || (vendorFlag != nil && *vendorFlag) {
+		if err := os.Setenv("GO15VENDOREXPERIMENT", "1"); err != nil {
+			warning("setenv GO15VENDOREXPERIMENT: %s", err)
+		}
+		*skipFlag = append(*skipFlag, "vendor")
+		trueValue := true
+		vendorFlag = &trueValue
 	}
 
 	formatPaths(resolvePaths(*pathsArg, *skipFlag), tools)
