@@ -16,7 +16,7 @@ Run multiple golang formatters in one command
 
 Flags:
   -h, --help             Show context-sensitive help (also try --help-long and --help-man).
-  -f, --fmt=gofmt ...    Formatter to call (sepcify it multiple times, e.g.: -f=gofmt -f=goremovelines
+  -f, --fmt=gofmt ...    Formatter to call (sepcify it multiple times, e.g.: --fmt=gofmt --fmt=goremovelines
   -w, --toSource         Write result to (source) file instead of stdout
   -s, --skip=DIR... ...  Skip directories with this name when expanding '...'.
       --vendor           Enable vendoring support (skips 'vendor' directories and sets GO15VENDOREXPERIMENT=1).
@@ -39,3 +39,12 @@ gomultifmt --vendor --fmt=gofmt --fmt=goremovelines -w ./...
 ```
 gomultifmt --fmt=gofmt --fmt=goremovelines main.go
 ```
+
+## Bonus VSCode config
+
+  "go.formatFlags": [
+      "--fmt=goreturns",
+      "--fmt=goremovelines",
+  ],
+  "go.formatTool": "gomultifmt",
+

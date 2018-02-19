@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	fmtFlag           = kingpin.CommandLine.Flag("fmt", "Formatter to call (sepcify it multiple times, e.g.: -f=gofmt -f=goremovelines").Short('f').PlaceHolder("gofmt").Default("gofmt").Strings()
+	fmtFlag           = kingpin.CommandLine.Flag("fmt", "Formatter to call (sepcify it multiple times, e.g.: --fmt=gofmt --fmt=goremovelines").Short('f').PlaceHolder("gofmt").Default("gofmt").Strings()
 	writeToSourceFlag = kingpin.CommandLine.Flag("toSource", "Write result to (source) file instead of stdout").Short('w').Default("false").Bool()
 	skipFlag          = kingpin.CommandLine.Flag("skip", "Skip directories with this name when expanding '...'.").Short('s').PlaceHolder("DIR...").Strings()
 	vendorFlag        = kingpin.CommandLine.Flag("vendor", "Enable vendoring support (skips 'vendor' directories and sets GO15VENDOREXPERIMENT=1).").Bool()
