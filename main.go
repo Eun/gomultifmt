@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -24,7 +25,7 @@ type tool struct {
 	args []string
 }
 
-func formatPaths(paths []string, tools []tool) {
+func formatPaths(paths []string, tools []tool) error {
 	for i := 0; i < len(paths); i++ {
 		for j := 0; j < len(tools); j++ {
 			out := &bytes.Buffer{}
@@ -37,29 +38,29 @@ func formatPaths(paths []string, tools []tool) {
 			cmd.Stderr = os.Stderr
 
 			if err := cmd.Run(); err != nil {
-				warning("Tool `%s' failed: %v", tools[j].cmd, err)
-				continue
+				return fmt.Errorf("Tool `%s' failed: %v", tools[j].cmd, err)
 			}
 
 			if writeToSourceFlag != nil && *writeToSourceFlag {
 				f, err := os.Create(paths[i])
 				if err == nil {
 					if _, err = f.Write(out.Bytes()); err != nil {
-						warning("Unable to write file `%s': %v", paths[i], err)
+						return fmt.Errorf("Unable to write file `%s': %v", paths[i], err)
 					}
 					if err = f.Close(); err != nil {
-						warning("Unable to close file `%s': %v", paths[i], err)
+						return fmt.Errorf("Unable to close file `%s': %v", paths[i], err)
 					}
 				} else {
-					warning("Unable to create file `%s': %v", paths[i], err)
+					return fmt.Errorf("Unable to create file `%s': %v", paths[i], err)
 				}
 			} else {
 				if _, err := io.Copy(os.Stdout, out); err != nil {
-					warning("Unable to write to stdout (`%s'): %v", paths[i], err)
+					return fmt.Errorf("Unable to write to stdout (`%s'): %v", paths[i], err)
 				}
 			}
 		}
 	}
+	return nil
 }
 
 func formatStdin(tools []tool) error {
@@ -80,7 +81,7 @@ func formatStdin(tools []tool) error {
 
 		if err := cmd.Run(); err != nil {
 			warning("Tool `%s' failed: %v", tools[j].cmd, err)
-			continue
+			return err
 		}
 
 		in.Reset()
@@ -129,12 +130,15 @@ func main() {
 	}
 
 	if fmtFlag == nil || len(*fmtFlag) <= 0 {
+		warning("No formatters defined")
+		os.Exit(1)
 		return
 	}
 
 	if pathsArg == nil || len(*pathsArg) <= 0 {
 		if err := formatStdin(tools); err != nil {
 			warning("formating from stdin failed: %v\n", err)
+			os.Exit(1)
 		}
 		return
 	}
@@ -152,5 +156,8 @@ func main() {
 		vendorFlag = &trueValue
 	}
 
-	formatPaths(resolvePaths(*pathsArg, *skipFlag), tools)
+	if err := formatPaths(resolvePaths(*pathsArg, *skipFlag), tools); err != nil {
+		warning("formating failed: %v\n", err)
+		os.Exit(1)
+	}
 }
